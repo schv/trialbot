@@ -1,0 +1,11 @@
+/src/config.py
+/src/__pycache__
+/media
+/bin
+/lib
+/lib64
+/share
+/.vscode
+/include
+*.dat
+*.cfg

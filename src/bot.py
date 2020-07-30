@@ -63,7 +63,7 @@ async def store_face(message: types.Message):
                     path = make_unique_path(path)
 
                 img.save(path)
-                with shelve.open('faces', writeback=True) as faces_shelf:
+                with shelve.open('faces.dat', writeback=True) as faces_shelf:
                     (
                         faces_shelf
                         .get(user_id, default=[])
@@ -98,7 +98,7 @@ async def store_voice(message: types.Message):
         logging.log(level=logging.ERROR,
                     msg=f'ffmpeg error for {voice_file.file_path}: {err}')
 
-    with shelve.open('voices', writeback=True) as voices_shelf:
+    with shelve.open('voices.dat', writeback=True) as voices_shelf:
         (
             voices_shelf
             .get(user_id, default=[])
