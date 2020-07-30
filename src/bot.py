@@ -91,9 +91,11 @@ async def store_voice(message: types.Message):
 
     logging.log(level=logging.INFO,
                 msg=f'ffmpeg convertion completed for {voice_file.file_path}')
+    
     if out is not None:
         logging.log(level=logging.INFO,
                     msg=f'ffmpeg output for {voice_file.file_path}: {out}')
+    
     if err is not None:
         logging.log(level=logging.ERROR,
                     msg=f'ffmpeg error for {voice_file.file_path}: {err}')
