@@ -2,6 +2,7 @@ import logging
 import os
 import shelve
 import urllib
+from pathlib import Path
 
 import face_recognition as fr
 import ffmpeg
@@ -15,28 +16,31 @@ from config import token
 
 logging.basicConfig(level=logging.INFO)
 
-base_path = '/home/ubunta/trialbot/trialbot'
+base_path = Path(__file__).absolute().parent.parent
 os.chdir(base_path)
+
 bot = Bot(token=token)
 dp = Dispatcher(bot)
 
 
-def init_directories(base_path):
-    if not os.path.exists(f'{base_path}/media'):
-        os.mkdir(f'{base_path}/media')
-    if not os.path.exists(f'{base_path}/media/voice'):
-        os.mkdir(f'{base_path}/media/voice')
-    if not os.path.exists(f'{base_path}/media/image'):
-        os.mkdir(f'{base_path}/media/image')
+def init_directories(base_path: Path):
+    if not (media_path := base_path.joinpath('media')).exists():
+        media_path.mkdir()
+
+    if not (voice_path := media_path.joinpath('voice')).exists():
+        voice_path.mkdir()
+
+    if not (photos_path := media_path.joinpath('photos')).exists():
+        photos_path.mkdir()
 
 
-def make_unique_path(path):
-    p, ext = os.path.splitext(path)
+def make_unique_path(path: Path):
+    directory, name, ext = path.parent, path.stem, path.suffix
     path = next(
         new_path
         for i in range(10**6)
-        if os.path.basename(new_path := f'{p}{i}{ext}')
-        not in os.listdir(os.path.dirname(path))
+        if (new_path := directory.joinpath(f'{name}{i}{ext}')).name
+        not in os.listdir(path.parent)
     )
     return path
 
@@ -60,17 +64,22 @@ async def store_face(message: types.Message):
             )
 
             if face:
-                path = f'{base_path}/media/{image_file.file_path}'
+                path = base_path.joinpath('media', image_file.file_path)
 
-                if os.path.exists(path):
+                if path.exists():
                     path = make_unique_path(path)
+                
+                logging.log(
+                    level=logging.INFO,
+                    msg=f'Saving image into {path}'
+                )
 
                 img.save(path)
                 with shelve.open('faces.dat', writeback=True) as faces_shelf:
                     (
                         faces_shelf
                         .get(user_id, default=[])
-                        .append((best_img.file_id, path))
+                        .append((best_img.file_id, str(path)))
                     )
 
 
@@ -80,25 +89,26 @@ async def store_voice(message: types.Message):
     user_id = str(message.from_user.id)
 
     url = f'https://api.telegram.org/file/bot{token}/{voice_file.file_path}'
-    path = f'{base_path}/media/{voice_file.file_path}'.replace('.oga', '.wav')
+    path = base_path.joinpath(
+        'media', voice_file.file_path.replace('.oga', '.wav'))
 
     if os.path.exists(path):
-        path = make_unique_path
+        path = make_unique_path(path)
 
     out, err = (
         ffmpeg
         .input(url)
-        .output(path, ar=16000, loglevel='warning')
+        .output(str(path), ar=16000, loglevel='warning')
         .run()
     )
 
     logging.log(level=logging.INFO,
                 msg=f'ffmpeg convertion completed for {voice_file.file_path}')
-    
+
     if out is not None:
         logging.log(level=logging.INFO,
                     msg=f'ffmpeg output for {voice_file.file_path}: {out}')
-    
+
     if err is not None:
         logging.log(level=logging.ERROR,
                     msg=f'ffmpeg error for {voice_file.file_path}: {err}')
@@ -107,9 +117,10 @@ async def store_voice(message: types.Message):
         (
             voices_shelf
             .get(user_id, default=[])
-            .append((voice_file.file_id, path))
+            .append((voice_file.file_id, str(path)))
         )
 
 
 if __name__ == '__main__':
+    init_directories(base_path)
     executor.start_polling(dp, skip_updates=True)
