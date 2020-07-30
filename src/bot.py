@@ -1,14 +1,17 @@
-from aiogram import Bot, Dispatcher, executor, types
-import face_recognition as fr
-import ffmpeg
+import logging
 import os
 import shelve
 import urllib
-import wget
+
+import face_recognition as fr
+import ffmpeg
 import numpy as np
+import wget
+from aiogram import Bot, Dispatcher, executor, types
 from PIL import Image
+
+# config must be created before usage
 from config import token
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
