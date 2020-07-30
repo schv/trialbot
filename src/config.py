@@ -1,1 +1,1 @@
-token = 'YOR_TOKEN'
+token = 'YOUR_TOKEN'
