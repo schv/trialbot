@@ -26,7 +26,7 @@ requests==2.24.0
 six==1.15.0
 toml==0.10.1
 typing-extensions==3.7.4.2
-urllib3==1.25.10
+urllib3==1.26.5
 wget==3.2
 wrapt==1.12.1
 yarl==1.5.0
